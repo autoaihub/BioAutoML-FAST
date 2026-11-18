@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "audit_rows": 64,
+  "pipeline_runs": 50,
+  "recomputed_test_scores": 100,
+  "grouped_fold_checks": [
+    5,
+    10
+  ],
+  "supplementary_table_numbers": [
+    7,
+    8
+  ],
+  "latex_compilation": "not run: no local compiler",
+  "artifacts": {
+    "manuscript/tables/sequence_redundancy/homology_evaluation.csv": "7e05f04eb131ed840a42ff6cc4d671c7dae9d18c9eeafe2151463ee52ddd75cf",
+    "manuscript/tables/sequence_redundancy/homology_evaluation.tex": "fe6973a1c202dc9e3b21a8f2d7723a478617de05a1d34d826ced6cad69d2584f",
+    "manuscript/tables/sequence_redundancy/extract_redundancy.py": "f04b83bd2fa7522f0675cfcec8b8ddcbb3c6135ff4a3e64db92c1a663004f667",
+    "manuscript/tables/sequence_redundancy/sequence_overlap.tex": "dc7410eb161180e96f0ad59cb846fa0b552dc3f51e4877ad3347fa9909130b25",
+    "manuscript/tables/sequence_redundancy/sequence_overlap.csv": "07797a8b342fdb8cfc6addae6409b94ba681550995f54194e2cd5d9a7b2f67e2"
+  }
+}

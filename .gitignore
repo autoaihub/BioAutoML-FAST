@@ -40,3 +40,7 @@ jobs
 !/manuscript/tables/
 !/manuscript/tables/**
 .benchmark/
+
+# Keep generated Python files ignored after manuscript inclusion rules.
+__pycache__/
+*.py[cod]

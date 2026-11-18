@@ -56,8 +56,11 @@ fi
 unset EXAMPLE_MODEL_SIGNING_KEY MODEL_SIGNING_KEY
 
 ./run-docker.sh --build \
-    --label "org.opencontainers.image.source=${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-Bonidia/BioAutoML-FAST}" \
+    --label "org.opencontainers.image.source=${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-autoaihub/BioAutoML-FAST}" \
     --label "org.opencontainers.image.revision=${GITHUB_SHA:-local}" </dev/null
+docker run --rm --network none --entrypoint python "$IMAGE_NAME" /app/.github/check_dataset_installer.py
+docker run --rm --network none --entrypoint python "$IMAGE_NAME" /app/.github/check_web_limits.py
+docker run --rm --network none --entrypoint python "$IMAGE_NAME" /app/.github/check_model_metadata_signing.py
 "${CI_PYTHON:-python3}" .github/check_docker.py
 mkdir "$test_path/image"
 docker cp "$CONTAINER_NAME:/tmp/ci-example" "$test_path/image/example"

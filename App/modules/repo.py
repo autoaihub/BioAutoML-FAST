@@ -1,3 +1,4 @@
+from bioautoml.web_limits import PREDICTION_LIMIT_TEXT, sample_limit_error
 from bioautoml.execution import run_path, timed, start_cli
 from utils.execution import web_execution
 import streamlit as st
@@ -398,24 +399,6 @@ def job_submitted_dialog(job_id):
     st.markdown("**Job ID**")
     st.code(job_id, language=None)
 
-def count_fasta_sequences(uploaded_files):
-    """Counts total FASTA records across one or more uploaded files."""
-    if not uploaded_files:
-        return 0
-
-    if not isinstance(uploaded_files, list):
-        uploaded_files = [uploaded_files]
-
-    total = 0
-    for f in uploaded_files:
-        f.seek(0)
-        for line in f:
-            if line.startswith(b">"):
-                total += 1
-        f.seek(0)
-
-    return total
-
 # Valid IUPAC nucleotide codes (DNA + RNA, including ambiguous)
 _FASTA_NT_CHARS = frozenset("ACGTURYSWKMBDHVNacgturyswkmbdhvn")
 # Valid IUPAC amino acid single-letter codes (including ambiguous/special)
@@ -558,21 +541,19 @@ def runUI():
         return
 
     with st.expander("Predicting new data"):
-        st.info("""
+        st.info(f"""
             Here you can **apply one of 60 curated, trained models** to perform **classification or regression** on biological sequences, without training a model from scratch.  
             These models cover a wide range of tasks, including peptide activity prediction, RNA annotation, protein function identification, and regulatory sequence analysis.
 
             Simply select a model from the repository and upload a **FASTA file for prediction**. Each model is linked to a **published dataset**, and the corresponding references are shown to ensure transparency and reproducibility.
             
-            **Important limits:** You can upload at most **5,000 prediction sequences** per job.    
+            {PREDICTION_LIMIT_TEXT}
 
             The **Examples button** provides concrete submission examples to help you get started.
 
             Jobs are executed asynchronously and queued for processing. Once completed, results can be accessed in the **Jobs** module using the generated job ID. Optional email notification and submission encryption are available.
             """
         )
-
-    MAX_SEQS = 5_000
 
     _, excol2, excol3 = st.columns([8, 1, 1])
 
@@ -897,13 +878,10 @@ def runUI():
                     st.error("Please upload the required prediction file.")
                 st.stop()
             else:
-                prediction_seq_count = count_fasta_sequences(test_files)
-                if prediction_seq_count > MAX_SEQS:
+                error = sample_limit_error(test_files, "FASTA", "Prediction set")
+                if error:
                     with queue_info:
-                        st.error(
-                            f"Prediction set exceeds the maximum allowed size "
-                            f"({prediction_seq_count:,} sequences uploaded, limit is {MAX_SEQS})."
-                        )
+                        st.error(error)
                     st.stop()
 
                 training = "Load model"

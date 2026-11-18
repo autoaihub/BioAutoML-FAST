@@ -1,3 +1,4 @@
+from bioautoml.web_limits import SAMPLE_LIMIT_TEXT, sample_limit_error
 from bioautoml.execution import run_path, timed, start_cli
 from utils.execution import web_execution
 import streamlit as st
@@ -637,32 +638,6 @@ def job_submitted_dialog(job_id):
     st.markdown("**Job ID**")
     st.code(job_id, language=None)
 
-def count_samples(uploaded_files, data_type):
-    """Counts total records across one or more uploaded files."""
-    if not uploaded_files:
-        return 0
-
-    if not isinstance(uploaded_files, list):
-        uploaded_files = [uploaded_files]
-
-    total = 0
-    if data_type != "Structured data":
-        for f in uploaded_files:
-            f.seek(0)
-            for line in f:
-                if line.startswith(b">"):
-                    total += 1
-            f.seek(0)
-    else:
-        for f in uploaded_files:
-            f.seek(0)
-            for line in f:
-                total += 1
-            total -= 1
-            f.seek(0)
-
-    return total
-
 import csv
 
 def check_structured_data(uploaded_files, task):
@@ -882,11 +857,11 @@ def runUI():
     st.divider()
 
     with st.expander("Preparing your submission"):
-        st.info("""
+        st.info(f"""
             Here you can **train a new model or load an existing model** to perform **classification or regression** on biological sequences.  
             You may optionally evaluate the model using a **labeled test set** or apply it to **unlabeled data for prediction**.
 
-            **Important limits:** You can upload at most **5,000 training sequences** or **5,000 testing/prediction sequences** per job.
+            {SAMPLE_LIMIT_TEXT}
 
             Each option and file uploader includes a **tooltip** with instructions about the **required file formats, labels, and submission rules**.
                 
@@ -895,8 +870,6 @@ def runUI():
             Jobs are executed asynchronously and queued for processing. Once completed, results can be accessed in the **Jobs** module using the generated job ID. Optional email notification and submission encryption are available.
             """
         )
-
-    MAX_SEQS = 5_000
 
     queue_info = st.container()
 
@@ -1172,23 +1145,17 @@ def runUI():
                 test_files = None
 
             if training == "Training set":
-                train_seq_count = count_samples(train_files, data_type)
-                if train_seq_count > MAX_SEQS:
+                error = sample_limit_error(train_files, data_type, "Training set")
+                if error:
                     with queue_info:
-                        st.error(
-                            f"Training set exceeds the maximum allowed size "
-                            f"({train_seq_count:,} samples uploaded, limit is {MAX_SEQS})."
-                        )
+                        st.error(error)
                     st.stop()
 
             if testing in ["Test set", "Prediction set"]:
-                test_seq_count = count_samples(test_files, data_type)
-                if test_seq_count > MAX_SEQS:
+                error = sample_limit_error(test_files, data_type, testing)
+                if error:
                     with queue_info:
-                        st.error(
-                            f"Testing/Prediction set exceeds the maximum allowed size "
-                            f"({test_seq_count:,} samples uploaded, limit is {MAX_SEQS})."
-                        )
+                        st.error(error)
                     st.stop()
 
             # FASTA format and content validation

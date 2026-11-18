@@ -18,7 +18,7 @@ import uuid
 import joblib
 import numpy as np
 from bioautoml.execution import timed
-from bioautoml.model_security import PACKAGES, sign_manifest, verify_signature
+from bioautoml.model_security import PACKAGES, canonical_manifest, sign_manifest, verify_signature
 
 
 SUMMARY_KEYS = frozenset({
@@ -77,6 +77,15 @@ def _json_default(value):
     # Display-only parameters (e.g. callable objectives); fitted objects are
     # preserved losslessly in prediction.joblib, never reconstructed from JSON.
     return str(value)
+
+
+def _json_metadata(value):
+    """Represent nonfinite display parameters as strings in strict JSON.
+
+    For example, XGBoost's missing=np.nan is displayed as "NaN". The fitted
+    estimator remains unchanged in prediction.joblib.
+    """
+    return json.loads(json.dumps(value, default=_json_default), parse_constant=str)
 
 
 class ModelArtifact(Mapping):
@@ -188,7 +197,7 @@ def _write_bundle(path, sections, info, source=None):
     with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f'.{path.name}.', delete=False) as handle:
         temporary = Path(handle.name)
     try:
-        manifest = {'format': 'BioAutoML-FAST', 'version': 2, 'info': info, 'sections': {},
+        manifest = {'format': 'BioAutoML-FAST', 'version': 2, 'info': _json_metadata(info), 'sections': {},
                     'model_id': str(uuid.uuid4()), 'packages': {name: version(name) for name in PACKAGES}, 'hashes': {}}
         with zipfile.ZipFile(temporary, 'w', compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
             for part in PARTS:
@@ -207,7 +216,7 @@ def _write_bundle(path, sections, info, source=None):
                 with archive.open(f'{part}.joblib') as handle:
                     manifest['hashes'][part] = hashlib.file_digest(handle, 'sha256').hexdigest()
         with zipfile.ZipFile(temporary, 'a', compression=zipfile.ZIP_STORED) as archive:
-            archive.writestr('manifest.json', json.dumps(manifest, default=_json_default))
+            archive.writestr('manifest.json', json.dumps(manifest, default=_json_default, allow_nan=False))
         # Match ordinary model-file readability for bind-mounted repositories;
         # preserve explicit permissions when replacing an existing artifact.
         os.chmod(temporary, path.stat().st_mode & 0o777 if path.exists() else 0o644)
@@ -240,14 +249,25 @@ def update_model_summary(path, *, trust_unsigned=False, **updates):
 
 
 @timed('model_signing')
-def sign_web_model(path):
-    """Trusted training-completion hook, never called for uploads or inference."""
+def sign_web_model(path, *, expected_manifest_sha256=None):
+    """Sign a training output or verify and sign a pinned repository release."""
     source = ModelArtifact(path, trust_unsigned=True)
-    if source.verified:
+    # Normalize display metadata exactly as for signed training outputs.
+    manifest = {**source.manifest, 'info': _json_metadata(source.info)}
+    if expected_manifest_sha256 is not None:
+        if hashlib.sha256(canonical_manifest(manifest)).hexdigest() != expected_manifest_sha256:
+            raise ValueError(f'Model differs from the pinned Zenodo release: {path}')
+        if source.verified:
+            # Verify stored payloads without deserializing or rewriting them.
+            with zipfile.ZipFile(path) as archive:
+                for part in PARTS:
+                    with archive.open(f'{part}.joblib') as stream:
+                        if hashlib.file_digest(stream, 'sha256').hexdigest() != manifest['hashes'][part]:
+                            raise ValueError(f'Signed model section differs from the release: {path}')
+            return
+    elif source.verified:
         raise ValueError('Already signed; models must not be re-signed on upload.')
-    if source.manifest['version'] != 2:
-        raise ValueError('Only freshly created version 2 models can be signed.')
-    signature = sign_manifest(source.manifest)
+    signature = sign_manifest(manifest)
     # Hash each section during copying. No unsigned payload is deserialized here.
     path = Path(path)
     with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as handle:
@@ -262,8 +282,9 @@ def sign_web_model(path):
                         dst.write(chunk)
                 if digest.hexdigest() != source.manifest['hashes'][part]:
                     raise ValueError('Training artifact changed before signing.')
-            archive.writestr('manifest.json', json.dumps(source.manifest))
+            archive.writestr('manifest.json', json.dumps(manifest, allow_nan=False))
             archive.writestr('signature.json', json.dumps(signature))
+        os.chmod(temporary, path.stat().st_mode & 0o777)
         os.replace(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)

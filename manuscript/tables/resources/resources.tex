@@ -1,0 +1,156 @@
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+\setlength{\LTcapwidth}{\linewidth}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{0.35\linewidth}
+  *{5}{>{\raggedleft\arraybackslash}p{\dimexpr0.13\linewidth-2\tabcolsep\relax}}
+@{}}
+\caption{\textbf{Computational resources for the 64 BioAutoML-FAST benchmarks.} Resources are reported for one run per dataset using 32 allocated CPUs. Times are in minutes; RAM is in GiB. Extraction denotes descriptor extraction, selection denotes Stage 1, and optimization denotes Stage 2. Total time also includes evaluation and other pipeline processing. Dataset composition is provided in Table~\ref{benchmark_datasets}.}\label{tab:computational_resources}\\
+\toprule
+\textbf{Model} & \shortstack{\textbf{Extraction}\\(min)} & \shortstack{\textbf{Selection}\\(min)} & \shortstack{\textbf{Optimization}\\(min)} & \shortstack{\textbf{Total}\\(min)} & \shortstack{\textbf{Peak RAM}\\(GiB)} \\
+\midrule
+\endfirsthead
+\caption[]{Computational resources for the 64 benchmarks (continued).}\\
+\toprule
+\textbf{Model} & \shortstack{\textbf{Extraction}\\(min)} & \shortstack{\textbf{Selection}\\(min)} & \shortstack{\textbf{Optimization}\\(min)} & \shortstack{\textbf{Total}\\(min)} & \shortstack{\textbf{Peak RAM}\\(GiB)} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\textit{Continued on next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+Model 1: antibody peptides & 19.14 & 41.69 & 73.81 & 138.30 & 61.39 \\
+\midrule
+Model 2: anticancer peptides & 0.39 & 3.30 & 7.53 & 11.63 & 3.89 \\
+\midrule
+Model 3: anticancer peptides & 0.23 & 2.30 & 1.99 & 4.67 & 4.31 \\
+\midrule
+Model 4: anticancer peptides & 0.84 & 14.37 & 20.39 & 36.39 & 12.62 \\
+\midrule
+Model 5: anticancer peptides & 0.95 & 11.26 & 17.58 & 30.50 & 15.05 \\
+\midrule
+Model 6: anti-coronavirus & 0.29 & 2.42 & 3.08 & 5.94 & 5.36 \\
+\midrule
+Model 7: anti-coronavirus and random non-secretory proteins & 0.40 & 6.52 & 6.65 & 13.87 & 7.67 \\
+\midrule
+Model 8: antifungal peptides & 1.00 & 17.88 & 28.50 & 48.80 & 14.74 \\
+\midrule
+Model 9: anti-hypertensive peptides & 1.01 & 8.12 & 12.12 & 21.81 & 14.01 \\
+\midrule
+Model 10: antimalarial peptides & 0.51 & 11.92 & 11.05 & 23.99 & 6.68 \\
+\midrule
+Model 11: antimalarial peptides & 1.07 & 21.34 & 17.10 & 40.01 & 12.45 \\
+\midrule
+Model 12: antimicrobial peptides & 18.38 & 47.09 & 79.88 & 147.65 & 52.82 \\
+\midrule
+Model 13: antimicrobial peptides & 2.73 & 19.13 & 35.98 & 59.72 & 27.45 \\
+\midrule
+Model 14: antimicrobial peptides & 10.92 & 80.15 & 113.90 & 211.17 & 51.35 \\
+\midrule
+Model 15: anti-MRSA strains peptides & 0.51 & 9.64 & 11.89 & 22.73 & 7.16 \\
+\midrule
+Model 16: antioxidant proteins & 2.57 & 34.83 & 61.88 & 102.23 & 21.78 \\
+\midrule
+Model 17: anti-parasitic peptides & 1.65 & 15.08 & 11.29 & 28.76 & 21.75 \\
+\midrule
+Model 18: antiviral & 0.51 & 4.47 & 8.86 & 14.41 & 6.21 \\
+\midrule
+Model 19: antiviral and random non-secretory proteins & 0.69 & 8.50 & 16.78 & 26.54 & 11.65 \\
+\midrule
+Model 20: antiviral peptides & 2.49 & 24.41 & 38.21 & 67.73 & 21.93 \\
+\midrule
+Model 21: bitter peptides & 0.31 & 2.16 & 2.89 & 5.57 & 3.54 \\
+\midrule
+Model 22: blood-brain barrier peptides & 0.18 & 1.21 & 1.13 & 2.63 & 2.41 \\
+\midrule
+Model 23: DNA-binding proteins & 1.70 & 18.10 & 27.84 & 50.53 & 9.60 \\
+\midrule
+Model 24: DNA-binding proteins & 0.50 & 5.32 & 7.35 & 13.53 & 6.06 \\
+\midrule
+Model 25: DNase I hypersensitive sites & 1.02 & 3.55 & 4.89 & 9.83 & 3.42 \\
+\midrule
+Model 26: DPP IV inhibitory peptides & 0.47 & 4.21 & 5.91 & 11.09 & 5.75 \\
+\midrule
+Model 27: hemolytic peptides & 0.57 & 9.00 & 10.28 & 20.24 & 6.76 \\
+\midrule
+Model 28: recombination spots & 5.32 & 2.95 & 4.51 & 12.96 & 3.36 \\
+\midrule
+Model 29: lncRNA (\textit{Homo sapiens}) & 149.09 & 7.43 & 12.92 & 170.18 & 5.94 \\
+\midrule
+Model 30: lncRNA (\textit{Mus musculus}) & 67.07 & 5.64 & 9.56 & 82.78 & 6.38 \\
+\midrule
+Model 31: lncRNA (\textit{Triticum aestivum}) & 75.83 & 6.21 & 11.20 & 93.82 & 5.03 \\
+\midrule
+Model 32: lncRNA (\textit{Zea mays}) & 128.49 & 15.51 & 21.39 & 166.29 & 10.11 \\
+\midrule
+Model 33: m5C sites (\textit{Arabidopsis thaliana}) & 2.24 & 7.35 & 6.57 & 16.44 & 5.04 \\
+\midrule
+Model 34: m5C sites (\textit{Homo sapiens}) & 0.08 & 1.41 & 1.65 & 3.23 & 1.42 \\
+\midrule
+Model 35: m5C sites (\textit{Mus musculus}) & 0.08 & 0.80 & 2.46 & 3.44 & 1.40 \\
+\midrule
+Model 36: m5C sites (\textit{Saccharomyces cerevisiae}) & 0.12 & 1.99 & 4.19 & 6.47 & 1.71 \\
+\midrule
+Model 37: neuropeptides & 2.20 & 24.57 & 42.57 & 71.40 & 22.76 \\
+\midrule
+Model 38: non-classical secreted proteins & 1.60 & 10.31 & 14.46 & 26.98 & 12.51 \\
+\midrule
+Model 39: peptide toxicity & 1.85 & 19.90 & 27.91 & 50.93 & 19.61 \\
+\midrule
+Model 40: phage virion proteins & 1.29 & 5.03 & 15.87 & 23.19 & 7.10 \\
+\midrule
+Model 41: proinflammatory peptides & 0.95 & 6.71 & 7.11 & 15.09 & 16.84 \\
+\midrule
+Model 42: protein lysine crotonylation sites & 13.10 & 36.23 & 90.55 & 143.19 & 49.86 \\
+\midrule
+Model 43: quorum-sensing peptides & 0.32 & 4.52 & 7.38 & 12.47 & 4.20 \\
+\midrule
+Model 44: real microRNA precursors & 1.19 & 7.78 & 8.15 & 17.45 & 4.42 \\
+\midrule
+Model 45: ribosome binding site sequences & 20.62 & 64.44 & 111.08 & 200.44 & 51.69 \\
+\midrule
+Model 46: sigma70 promoters & 0.83 & 5.08 & 4.45 & 10.79 & 4.93 \\
+\midrule
+Model 47: small non-coding RNA and shuffled sequences & 0.34 & 1.18 & 1.85 & 3.49 & 1.78 \\
+\midrule
+Model 48: toehold switch sequences & 20.42 & 25.86 & 31.45 & 79.59 & 19.30 \\
+\midrule
+Model 49: Tumor T cell antigens & 0.46 & 3.97 & 6.26 & 10.98 & 5.28 \\
+\midrule
+Model 50: umami peptides & 0.22 & 2.18 & 2.22 & 4.79 & 3.23 \\
+\midrule
+Model 51: lncRNAs subcellular localization - training set with 4 classes & 12.85 & 7.40 & 16.73 & 37.83 & 2.71 \\
+\midrule
+Model 52: lncRNAs subcellular localization - training set with 5 classes & 12.48 & 10.23 & 50.00 & 76.58 & 2.71 \\
+\midrule
+Model 53: mRNA subcellular localization & 196.13 & 31.94 & 63.35 & 294.01 & 5.58 \\
+\midrule
+Model 54: non-coding RNA - 4 classes & 5.54 & 34.52 & 22.02 & 62.85 & 2.98 \\
+\midrule
+Model 55: non-coding RNA - 8 classes & 4.60 & 40.49 & 25.07 & 71.58 & 5.26 \\
+\midrule
+Model 56: non-coding RNA - E. coli K12 & 0.47 & 2.96 & 5.49 & 9.06 & 1.79 \\
+\midrule
+Model 57: non-coding RNA - Multiple bacterial phyla & 2.34 & 27.37 & 9.61 & 39.75 & 2.90 \\
+\midrule
+Model 58: antibody peptides & 19.34 & 59.36 & 168.63 & 253.95 & 65.76 \\
+\midrule
+Model 59: ribosome binding site sequences & 19.28 & 54.72 & 132.71 & 211.70 & 51.80 \\
+\midrule
+Model 60: toehold switch sequences & 20.32 & 22.98 & 63.03 & 108.69 & 18.88 \\
+\midrule
+Model 61: protein solubility & 5.27 & 12.43 & 28.03 & 46.50 & 38.35 \\
+\midrule
+Model 62: enzyme optimal catalytic temperature & 7.99 & 27.21 & 37.10 & 73.65 & 43.44 \\
+\midrule
+Model 63: protein melting temperature & 5.42 & 20.43 & 105.67 & 137.32 & 22.31 \\
+\midrule
+Model 64: yeast protein half-life & 10.84 & 15.18 & 10.59 & 37.05 & 42.20 \\
+
+\end{longtable}
+\endgroup

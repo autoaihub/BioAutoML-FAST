@@ -4,13 +4,13 @@
 ![Status](https://img.shields.io/badge/status-up-brightgreen)
 
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/Bonidia/BioAutoML-FAST/refs/heads/main/App/imgs/logo.png" alt="BioAutoML-FAST" width="400">
+  <img src="https://raw.githubusercontent.com/autoaihub/BioAutoML-FAST/refs/heads/main/App/imgs/logo.png" alt="BioAutoML-FAST" width="400">
 </h1>
 
 <h4 align="center">BioAutoML-FAST: Empowering Breakthroughs in Life Sciences with End-to-End Machine Learning</h4>
 
 <p align="center">
-  <a href="https://github.com/Bonidia/BioAutoML-FAST/">Home</a> •
+  <a href="https://github.com/autoaihub/BioAutoML-FAST/">Home</a> •
   <a href="https://bioautoml.icmc.usp.br/">Web Platform</a> •
   <a href="#installing-dependencies-and-package">Installing</a> •
   <a href="#how-to-use">CLI Usage</a> •
@@ -39,7 +39,7 @@ without installing anything locally.
 The prediction of biological sequence properties has traditionally relied on alignment-based methods that assume evolutionary homology and depend on curated reference databases. This, in turn, limits scalability and sensitivity for large or heterogeneous datasets, remote homologs, short sequences, and rapidly evolving genomic regions. Although Machine-Learning (ML) approaches offer alignment-free alternatives, their broader adoption is limited by: (i) the lack of standardized, externally validated benchmark models across diverse datasets, and (ii) the technical expertise required for feature engineering, model selection, and evaluation. Automated machine learning (AutoML) alleviates these challenges by systematically optimizing representations and models with minimal user intervention. However, most existing frameworks prioritize task-specific model construction and lack mechanisms for preserving trained models as persistent, comparable benchmarks. We introduce BioAutoML-FAST, an end-to-end web platform for automated ML analysis of nucleotide and amino acid sequences. It supports both classification and regression tasks and automates feature extraction, model training, and evaluation without requiring prior user expertise. Uniquely, it serves as a community benchmarking resource, hosting a continuously expanding repository of 60+ reusable, standardized models for genomic, transcriptomic, and proteomic applications. Extensive validation on independent datasets demonstrates performance comparable to or exceeding that of state-of-the-art methods, including protein language models such as ESM-2. BioAutoML-FAST is available at https://bioautoml.icmc.usp.br/. This website is free and open to all users, and there is no login requirement.
 
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/Bonidia/BioAutoML-FAST/refs/heads/main/App/imgs/overview.png" alt="Overview" width="600">
+  <img src="https://raw.githubusercontent.com/autoaihub/BioAutoML-FAST/refs/heads/main/App/imgs/overview.png" alt="Overview" width="600">
 </h1>
 
 ## Key Features
@@ -68,7 +68,7 @@ Silva de Almeida, B. L., Bonidia, R., Bole, M., Avila-Santos, A., Stadler, P. F.
 Clone the repository and download MathFeature automatically:
 
 ```sh
-git clone --recurse-submodules https://github.com/Bonidia/BioAutoML-FAST.git
+git clone --recurse-submodules https://github.com/autoaihub/BioAutoML-FAST.git
 cd BioAutoML-FAST
 ```
 
@@ -115,7 +115,7 @@ Run commands from the repository root in the installed environment.
 Use `python engineering.py --help` or `python generation.py --help` for all options.
 
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/Bonidia/BioAutoML-FAST/refs/heads/main/App/imgs/modules.png" alt="Modules" width="600">
+  <img src="https://raw.githubusercontent.com/autoaihub/BioAutoML-FAST/refs/heads/main/App/imgs/modules.png" alt="Modules" width="600">
 </h1>
 
 ### `engineering.py` 
@@ -291,9 +291,6 @@ pixi install --locked
 pixi run sync
 ```
 
-Run the tasks individually, in this order. Each task runs only its own experiment;
-it does not launch prerequisites.
-
 ```sh
 pixi run ablation               # 15 datasets × 6 conditions × 3 seeds
 pixi run benchmark-first        # First seed across 64 datasets
@@ -384,7 +381,7 @@ while prediction exports retain original names. Regression targets encoded after
 
 Browse the model repository at [bioautoml.icmc.usp.br](https://bioautoml.icmc.usp.br/).
 Models are also available for offline use on
-[Zenodo](https://doi.org/10.5281/zenodo.20349210).
+[Zenodo](https://doi.org/10.5281/zenodo.20349210) using the all-versions DOI.
 
 CLI training saves an unsigned model in `model/trained_model.sav`. To use your own
 model with `generation.py`, supply `--path_model` and `--trust_unsigned_model`,
@@ -435,7 +432,7 @@ On Linux (amd64), with Docker running, Docker access without `sudo`, and `curl`
 installed, deploy without cloning the repository:
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/Bonidia/BioAutoML-FAST/main/run-docker.sh &&
+curl -fsSLO https://raw.githubusercontent.com/autoaihub/BioAutoML-FAST/main/run-docker.sh &&
 bash run-docker.sh
 ```
 
@@ -451,13 +448,40 @@ From a repository checkout, start a local instance with:
 ./run-docker.sh
 ```
 
-Open `http://localhost:8501`. The script pulls `ghcr.io/bonidia/bioautoml-fast:latest`
+During interactive setup, the launcher asks:
+
+```text
+Download and configure model repository now? [y/N]:
+```
+
+Answer **Yes** to download and install the model-repository data automatically,
+or press Enter to skip. No flag is needed. Non-interactive launches skip this step.
+Answering Yes downloads `datasets_run1_complete.tar.zst` from Zenodo, verifies
+its SHA-256 checksum, and extracts it into `App/datasets` (or `DATASETS_DIR`).
+It uses the reviewed version linked from the [all-versions DOI](https://doi.org/10.5281/zenodo.20349210),
+with the record and checksum pinned in `deployment/install_datasets.py`.
+Allow about **113 GiB free**: the download is 9.44 GiB and extraction is about
+100 GiB. The archive is cached under `${XDG_CACHE_HOME:-$HOME/.cache}/bioautoml-fast/datasets`;
+set `DATASETS_CACHE_DIR` to change that location. Interrupted downloads resume on
+the next launch when you answer Yes again. Installation preserves identical existing files and stops on
+conflicting files; use a separate `DATASETS_DIR` in that case. Completed installations
+are reused when you answer Yes again.
+Download, installation, or signing failure stops deployment before existing containers are stopped.
+The installer runs inside the image, so host Python and Zstandard are not required.
+Use an image built after this option was added, or use `--build` from this checkout.
+After installation, the launcher automatically signs the 64 Run 1 models with your deployment key before starting the app. An offline container checks each model against the release manifest and verifies its contents without loading the estimator. On repeat setup it verifies existing trusted signatures and signs any remaining unsigned release models. The cached Zenodo archive stays unchanged.
+
+The next prompt is `Keep the 5,000-sample limit per set? [Y/n]:`. Press Enter on a fresh deployment to keep the limit, or answer **n** to disable it. Training and test/prediction sets each have their own allowance of 5,000 FASTA sequences or CSV data rows across all files. Repository predictions use the same limit. This choice affects only the web sample count. Upload size limits, input validation, and job timeouts still apply.
+
+The launcher saves the choice in `STATE_DIR/sample-limit`. On later deployments Enter keeps the saved choice, and an interactive answer can change it. Non-interactive launches use the saved choice or enable the limit on first setup.
+
+Open `http://localhost:8501`. The script pulls `ghcr.io/autoaihub/bioautoml-fast:latest`
 and replaces both containers; running jobs are interrupted. Jobs and database
 files remain in local bind-mounted directories. A failed download leaves the
 existing containers running. Local source code does not override the published image.
 See `./run-docker.sh --help` for options.
 
-Use `IMAGE_NAME=ghcr.io/bonidia/bioautoml-fast:sha-<full-commit> ./run-docker.sh`
+Use `IMAGE_NAME=ghcr.io/autoaihub/bioautoml-fast:sha-<full-commit> ./run-docker.sh`
 to select a particular build, or specify an image digest for an exact deployment.
 With a full repository checkout, build locally using `./run-docker.sh --build`. For local UI development
 with source mounts and live reload, use `./run-docker.sh --dev`.
@@ -489,8 +513,9 @@ Existing deployments keep their mounted key directory unless you explicitly
 select another key or `MODEL_KEYS_DIR`. Supplied keys are copied into the protected
 key directory; existing private keys are never overwritten. Incomplete or
 mismatched key sets stop startup before any running containers are replaced.
-Key setup runs through Docker; host Python is not required. Only the training
-worker receives the private key, mounted read-only.
+Key setup runs through Docker. The offline setup container and the training
+worker receive the signing key through read-only mounts. The web container
+receives the public verification keys.
 
 To use a different directory or restore keys from another machine:
 
@@ -552,8 +577,8 @@ Before publishing, add the private PEM file as the repository Actions secret
 `EXAMPLE_MODEL_SIGNING_KEY` (Settings → Secrets and variables → Actions). It must
 match a trusted public key in `deployment/official_public_keys.json`. Only
 default-branch pushes receive this secret; pull requests use disposable keys.
-The private key is mounted only into the training worker, never copied into the
-image or uploaded with the example.
+CI mounts the private key for signing. The published image contains only public
+verification material and the signed example.
 
 The published image includes the signed example results. On startup they are
 installed into the persistent jobs directory and registered for the **Example**
@@ -561,7 +586,7 @@ button in Jobs. This managed example is exempt from automatic expiry. CI also
 tests installation on empty storage, prediction, and restart without a private key.
 
 Successful default-branch pushes publish the same tested image to GitHub Container
-Registry as `ghcr.io/bonidia/bioautoml-fast:latest` and `:sha-<full-commit>`.
+Registry as `ghcr.io/autoaihub/bioautoml-fast:latest` and `:sha-<full-commit>`.
 Pull requests only build and test; they never publish. Publication uses GitHub's
 automatic `GITHUB_TOKEN`, not a personal token. After the first publication, set
 the package visibility to **Public** in GitHub Packages to allow downloads without

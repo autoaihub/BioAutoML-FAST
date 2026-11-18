@@ -28,7 +28,7 @@ def runUI():
         with col_github:
             st.link_button(
                 "GitHub",
-                "https://github.com/Bonidia/BioAutoML-FAST",
+                "https://github.com/autoaihub/BioAutoML-FAST",
                 use_container_width=True,
             )
 
@@ -85,7 +85,7 @@ def runUI():
         st.markdown("**Data Availability**")
         st.markdown(
             """
-            The source code of the platform, along with all datasets used to build the model repository, is available at [github.com/Bonidia/BioAutoML-FAST](https://github.com/Bonidia/BioAutoML-FAST).
+            The source code of the platform, along with all datasets used to build the model repository, is available at [github.com/autoaihub/BioAutoML-FAST](https://github.com/autoaihub/BioAutoML-FAST).
 
             All trained models can be downloaded directly from the platform.
             """

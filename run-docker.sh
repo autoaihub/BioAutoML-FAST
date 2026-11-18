@@ -16,18 +16,24 @@ training_container="${container_name}-training"
 owner_label="io.bioautoml-fast.launcher"
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     echo "Usage: $0 [--build [Docker build options] | --dev | --delete]"
-    echo "Default: pull ghcr.io/bonidia/bioautoml-fast:latest and recreate both containers."
+    echo "Default: pull ghcr.io/autoaihub/bioautoml-fast:latest and recreate both containers."
     echo "--build: build bioautoml-fast:local instead of pulling (accepts Docker build options)."
     echo "--dev: build locally and enable live UI reload with read-only source mounts."
     echo "--delete: stop and remove this deployment's two containers and selected image, without pulling."
+    echo "Interactive setup asks whether to download and configure the Run 1 datasets (default: No)."
+    echo "Run 1 needs a 9.44 GiB download and about 100 GiB extracted; allow 113 GiB free."
+    echo "Setup signs the verified Run 1 models with the deployment key."
+    echo "Non-interactive launches skip dataset downloading."
+    echo "Web uploads default to 5,000 samples per set. Interactive setup can disable or restore this limit; STATE_DIR stores the choice."
     echo "Use --build --delete to remove the default local-build image."
     echo "Local jobs, database files, datasets and signing keys are preserved."
     echo "Replaces this script's container and image tag; completed jobs expire after 30 days."
     echo "Any running training jobs in that container will be interrupted."
     echo "Settings: IMAGE_NAME, CONTAINER_NAME, HOST_PORT, BIND_ADDRESS, JOBS_DIR, STATE_DIR, DATASETS_DIR."
-    echo "Defaults: ghcr.io/bonidia/bioautoml-fast:latest, bioautoml-fast, 8501, 127.0.0.1, App/jobs, App/task-results, App/datasets."
+    echo "Defaults: ghcr.io/autoaihub/bioautoml-fast:latest, bioautoml-fast, 8501, 127.0.0.1, App/jobs, App/task-results, App/datasets."
     echo "IMAGE_NAME can select a registry tag or digest; --build requires a tag."
     echo "DATASETS_DIR is created if missing and mounted read-only; repository data is optional."
+    echo "DATASETS_CACHE_DIR: resumable archive cache; default: \${XDG_CACHE_HOME:-\$HOME/.cache}/bioautoml-fast/datasets."
     echo "MODEL_KEYS_DIR: optional protected key directory; default: ./.bioautoml under the current directory."
     echo "Only signing.pem is stored there; public verification configuration is managed automatically."
     echo "Existing deployments reuse their mounted key directory unless a key/path is explicitly selected."
@@ -45,6 +51,7 @@ fail() { echo "Error: $*" >&2; exit 1; }
 delete_mode=false
 build_mode=false
 development_mode=false
+download_datasets=false
 build_options=()
 while (( $# )); do
     case "$1" in
@@ -62,11 +69,22 @@ done
 if [[ "$build_mode" == true ]]; then
     image_name="${IMAGE_NAME:-bioautoml-fast:local}"
 else
-    image_name="${IMAGE_NAME:-ghcr.io/bonidia/bioautoml-fast:latest}"
+    image_name="${IMAGE_NAME:-ghcr.io/autoaihub/bioautoml-fast:latest}"
 fi
 command -v docker >/dev/null || fail "Docker is not installed."
 docker info >/dev/null 2>&1 || fail "Cannot access Docker. Check the daemon and your Docker permissions."
 [[ "$(id -u)" != "0" ]] || fail "Run this script as a non-root user with Docker access (without sudo)."
+user_options=(--user "$(id -u):$(id -g)")
+training_user_options=("${user_options[@]}")
+runtime_version="$(docker --version)"
+if [[ "${runtime_version,,}" == *podman* ]]; then
+    rootless="$(docker info --format '{{.Host.Security.Rootless}}')"
+    if [[ "$rootless" == true ]]; then
+        # Preserve host ownership of protected bind mounts under rootless Podman.
+        user_options+=(--userns=keep-id)
+        training_user_options+=(--userns="container:$container_name")
+    fi
+fi
 [[ "$container_name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || fail "Invalid CONTAINER_NAME."
 [[ "$image_name" != -* && "$image_name" != sha256:* ]] || fail "IMAGE_NAME must be an image name, not an option or image ID."
 [[ "$build_mode" == false || "$image_name" != *@* ]] || fail "--build requires an image tag, not a digest."
@@ -219,6 +237,44 @@ configure_api_keys() {
     fi
 }
 
+if [[ -t 0 ]]; then
+    printf '\nOptional model repository setup: download Run 1 from Zenodo into %s.\n' "$datasets_path"
+    printf 'Download: 9.44 GiB; extracted files: about 100 GiB. Allow 113 GiB free.\n'
+    printf 'Setup signs the verified Run 1 models with your deployment key.\n'
+    while true; do
+        read -r -p 'Download and configure model repository now? [y/N]: ' datasets_answer || datasets_answer=""
+        case "${datasets_answer,,}" in
+            y|yes) download_datasets=true; break ;;
+            n|no|"") break ;;
+            *) printf 'Please answer yes or no (Enter means No).\n' ;;
+        esac
+    done
+    unset datasets_answer
+fi
+
+limit_file="$state_path/sample-limit"
+limit_samples=yes
+if [[ -f "$limit_file" ]]; then
+    limit_samples="$(cat -- "$limit_file")"
+    case "$limit_samples" in
+        yes|no) ;;
+        *) fail "Invalid saved sample limit setting in $limit_file (expected yes or no)." ;;
+    esac
+fi
+if [[ -t 0 ]]; then
+    limit_choices="Y/n"
+    [[ "$limit_samples" == yes ]] || limit_choices="y/N"
+    while true; do
+        read -r -p "Keep the 5,000-sample limit per set? [$limit_choices]: " answer || answer=""
+        case "${answer,,}" in
+            y|yes) limit_samples=yes; break ;;
+            n|no) limit_samples=no; break ;;
+            "") break ;;
+            *) printf 'Please answer yes or no.\n' ;;
+        esac
+    done
+fi
+
 configure_api_keys
 
 if [[ "$build_mode" == true ]]; then
@@ -229,6 +285,26 @@ else
     docker pull "$image_name" || fail "Could not pull the image. Check the tag and registry access, or use --build. Existing containers were not stopped."
 fi
 image_id="$(docker image inspect --format '{{.Id}}' "$image_name")"
+
+if [[ "$download_datasets" == true ]]; then
+    datasets_cache="${DATASETS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/bioautoml-fast/datasets}"
+    mkdir -p -- "$datasets_cache"
+    datasets_cache="$(cd -- "$datasets_cache" && pwd -P)"
+    [[ "$datasets_cache" != *,* ]] || fail "Dataset cache paths cannot contain commas."
+    [[ -w "$datasets_cache" && -w "$datasets_path" ]] || fail "Dataset cache and destination must be writable."
+    for path in "$datasets_path" "$datasets_cache"; do
+        [[ "$path" != "$keys_path" && "$path" != "$keys_path/"* && "$keys_path" != "$path/"* ]] || fail "Dataset installation directories must be separate from private keys."
+        [[ "$path" != "$verification_path" && "$verification_path" != "$path/"* ]] || fail "Dataset installation directories must not contain verification configuration."
+    done
+    echo "Preparing the Run 1 repository from Zenodo (download can be resumed by rerunning this option)..."
+    docker run --rm --read-only --cap-drop ALL --security-opt=no-new-privileges:true \
+        "${user_options[@]}" \
+        --mount "type=bind,source=$datasets_path,target=/datasets" \
+        --mount "type=bind,source=$datasets_cache,target=/downloads" \
+        --entrypoint python "$image_id" /app/deployment/install_datasets.py \
+        --destination /datasets --cache /downloads \
+        || fail "Dataset installation failed. Existing containers were not stopped."
+fi
 
 key_options=()
 key_arguments=(--output "/run/bioautoml-key-store/$keys_name" --reuse
@@ -244,7 +320,7 @@ fi
 echo "Preparing signing keys in $keys_path..."
 key_id="$(docker run --rm --network none --read-only --cap-drop ALL \
     --security-opt=no-new-privileges:true --ulimit core=0 \
-    --user "$(id -u):$(id -g)" \
+    "${user_options[@]}" \
     --mount "type=bind,source=$keys_parent,target=/run/bioautoml-key-store" \
     --mount "type=bind,source=$verification_path,target=/run/bioautoml-verification" \
     "${key_options[@]}" \
@@ -253,15 +329,27 @@ key_id="$(docker run --rm --network none --read-only --cap-drop ALL \
 verification_options=(--mount "type=bind,source=$verification_path/trusted_keys.json,target=/run/bioautoml/trusted_keys.json,readonly"
                       --env BIOAUTOML_TRUSTED_KEYS=/run/bioautoml/trusted_keys.json
                       --env BIOAUTOML_TRAINING_ENABLED=1)
+signer_mounts=()
+signer_command=(-c 'from bioautoml.model_security import initialize_web_signer; initialize_web_signer(); print("Signing keys verified.")')
+if [[ "$download_datasets" == true ]]; then
+    signer_mounts+=(--mount "type=bind,source=$datasets_path,target=/datasets")
+    echo "Verifying and signing the 64 Zenodo repository models..."
+    signer_command=(-m deployment.sign_repository /datasets)
+fi
 docker run --rm --network none --read-only --cap-drop ALL \
     --security-opt=no-new-privileges:true --ulimit core=0 \
-    --user "$(id -u):$(id -g)" \
+    "${user_options[@]}" \
     --mount "type=bind,source=$keys_path/signing.pem,target=/run/bioautoml/signing.pem,readonly" \
     "${verification_options[@]}" \
     --env BIOAUTOML_SIGNING_KEY=/run/bioautoml/signing.pem \
     --env BIOAUTOML_SIGNING_KEY_ID="$key_id" \
-    --entrypoint python "$image_id" -c 'from bioautoml.model_security import initialize_web_signer; initialize_web_signer(); print("Signing keys verified.")'
+    "${signer_mounts[@]}" --entrypoint python "$image_id" "${signer_command[@]}"
 echo "Signing keys: $keys_path (keep a secure backup for future machines)."
+
+# Publish the preference atomically once image and key setup have succeeded.
+limit_tmp="$(mktemp -- "$state_path/.sample-limit.XXXXXXXX")"
+printf '%s\n' "$limit_samples" > "$limit_tmp"
+mv -fT -- "$limit_tmp" "$limit_file"
 
 remove_deployment
 if [[ "$development_mode" == true ]]; then
@@ -273,7 +361,7 @@ docker run --detach --name "$container_name" \
     --label "$owner_label=run-docker.sh" \
     --security-opt=no-new-privileges:true \
     --restart unless-stopped --stop-timeout 40 --ulimit core=0 \
-    --user "$(id -u):$(id -g)" \
+    "${user_options[@]}" \
     --publish "$bind_address:$host_port:8501" \
     --mount "type=bind,source=$jobs_path,target=/app/App/jobs" \
     --mount "type=bind,source=$state_path,target=/app/App/task-results" \
@@ -281,6 +369,7 @@ docker run --detach --name "$container_name" \
     --env TASK_RESULTS_DB=/app/App/task-results/task_results.db \
     --env REDIS_DATA_DIR=/app/App/task-results/redis \
     --env BIOAUTOML_IMAGE_ID="$image_id" \
+    --env BIOAUTOML_LIMIT_SAMPLES="$limit_samples" \
     --env BLABLADOR_API_KEY \
     --env MAILGUN_API_KEY \
     "${verification_options[@]}" \
@@ -292,7 +381,7 @@ if [[ -n "$keys_path" ]]; then
         --label "$owner_label=run-docker.sh" \
         --security-opt=no-new-privileges:true \
         --restart unless-stopped --stop-timeout 40 --no-healthcheck --ulimit core=0 \
-        --user "$(id -u):$(id -g)" --network "container:$container_name" \
+        "${training_user_options[@]}" --network "container:$container_name" \
         --mount "type=bind,source=$jobs_path,target=/app/App/jobs" \
         --mount "type=bind,source=$state_path,target=/app/App/task-results" \
         --mount "type=bind,source=$keys_path/signing.pem,target=/run/bioautoml/signing.pem,readonly" \

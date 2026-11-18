@@ -20,7 +20,7 @@ RUN git clone --depth 1 https://github.com/Bonidia/MathFeature.git MathFeature \
 # 2. System dependencies and non-root user.
 FROM base AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    redis-server libgomp1 tini util-linux ca-certificates \
+    redis-server libgomp1 tini util-linux ca-certificates zstd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=uv /uv /uvx /bin/

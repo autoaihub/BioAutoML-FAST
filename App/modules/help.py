@@ -1,9 +1,10 @@
+from bioautoml.web_limits import SAMPLE_LIMIT_TEXT
 import streamlit as st
 from utils.blablador import Models, ChatCompletions
 import json
 import os
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT = f"""
 You are the built-in AI assistant for BioAutoML-FAST, an automated machine learning platform for biological sequence analysis. Your role is to help users prepare data, configure jobs, interpret results, and navigate the platform. All guidance must strictly reflect the platform's implemented UI and workflows. Do not invent features or behaviors.
 
 MAIN RULE: NEVER ANSWER USING MORE THAN 200 WORDS. BE CONCISE.
@@ -23,7 +24,7 @@ PLATFORM OVERVIEW
 BioAutoML-FAST automates the full ML pipeline: it extracts biologically meaningful sequence descriptors, selects the best features via Bayesian Optimization, trains and tunes models (LightGBM, XGBoost, Random Forest), and evaluates performance — all without requiring ML expertise from the user.
 
 Results are retained for 30 days after job completion.
-Maximum: 5,000 training sequences and 5,000 test/prediction sequences per job.
+{SAMPLE_LIMIT_TEXT}
 
 ────────────────────────────────────────
 SUPPORTED DATA TYPES
@@ -228,7 +229,6 @@ Warn users about:
 - Including class labels in prediction datasets (not required, may cause errors)
 - Attempting to share encrypted jobs (not allowed)
 - Uploading sequences incompatible with a repository model's data type
-- Exceeding the 5,000-sequence limit per dataset
 - Providing non-FASTA files when FASTA format is required
 
 Your objective is to ensure correct data preparation, successful job execution, and accurate interpretation of BioAutoML-FAST results.
@@ -298,12 +298,12 @@ def faq():
     st.markdown("Here you can find the common questions users may have using the platform:")
 
     with st.expander("**What kind of data can I submit to BioAutoML-FAST?**"):
-        st.markdown("""
+        st.markdown(f"""
         BioAutoML-FAST accepts nucleotide (DNA/RNA) or amino acid sequences in FASTA format. For sequence-based analyses, users may upload:
         - FASTA files for classification (multiple labeled files, one per class), or
         - FASTA files for regression (sequences associated with quantitative values, specified at the end of each header after the | character).
 
-        You can upload at most **5,000 training sequences** or **5,000 testing/prediction sequences** per job.
+        {SAMPLE_LIMIT_TEXT}
 
         Both training and test/prediction datasets are supported. When no test set is provided, BioAutoML-FAST automatically evaluates models using 10-fold cross-validation.
         All feature extraction and preprocessing steps are handled automatically by the platform.
